@@ -8,21 +8,20 @@ inputs = np.array([[6255.272, 3392.495, 0.000],
 [6627.199, 2591.850, 0.000],
 [-12770.881, 3241.758, -50.796],
 [7438.080, -655.969, -324.562],
-[7152.713, -2105.017, -517.960],
-[10000.000, 0 , 0 ]])
+[7152.713, -2105.017, -517.960]])
 
 mounttype_list = ['Shock','A-Arm','Shock','A-Arm','A-Arm','A-Arm','A-Arm']
 
-bolt1ARM = np.array([2.0,  .5, 0])
-bolt2ARM = np.array([3.0,  0 , 0])
-bolt3ARM = np.array([2.0, -2, 0])
+bolt1ARM = np.array([2.0,  .5, 0]) / 1000  # Bolt positions (relative to location of arm)
+bolt2ARM = np.array([3.0,  0 , 0]) / 1000
+bolt3ARM = np.array([2.0, -2, 0]) / 1000
 
-bolt1Shock = np.array([2.04,  0.0, 0])
-bolt2Shock = np.array([2.41, 1.39, 0])
-bolt3Shock = np.array([1.04,  1.76, 0])
+bolt1Shock = np.array([2.04,  0.0, 0]) / 1000
+bolt2Shock = np.array([2.41, 1.39, 0]) / 1000
+bolt3Shock = np.array([1.04,  1.76, 0]) / 1000
 
 # Bolt stiffness (N/m)
-k = 2e11  # 1 MN/m in each direction
+k = 723949516  # in Pa in each direction
 
 # Loop through each case
 for i in range(len(inputs)):
@@ -31,10 +30,13 @@ for i in range(len(inputs)):
     M_ext = np.zeros(3)
     W = -np.hstack((F_ext, M_ext))  # right-hand side: negative of applied load
 
-    if mounttype == mounttype_list[i]:
-        bolts = [bolt1ARM, bolt2ARM, bolt3ARM]
-    else:
-        bolts = [bolt1Shock, bolt2Shock, bolt3Shock]
+    match mounttype_list[i]:
+        case 'A-Arm':
+            bolts = [bolt1ARM, bolt2ARM, bolt3ARM]
+        case 'Shock':
+            bolts = [bolt1Shock, bolt2Shock, bolt3Shock]
+        case _:
+            raise ValueError(f"Unexpected mount type: {mounttype_list[i]}")
 
     A_force_moment = np.zeros((6, 15))  # 6 equations: Fx, Fy, Fz, Mx, My, Mz
     A_compatibility = np.zeros((9, 15))  # 3 constraints per bolt: F = k * δ
@@ -74,8 +76,8 @@ for i in range(len(inputs)):
     theta = X[3:6]
     bolt_forces = X[6:]
 
-    print(f"Flange translation (mm): {u * 1e3}")
-    print(f"Flange rotation (rad): {theta}")
+    #print(f"Flange translation (mm): {u * 1e3}")
+    #print(f"Flange rotation (rad): {theta}")
 
     for b in range(3):
         Fx, Fy, Fz = bolt_forces[3*b:3*b+3]
